@@ -1,0 +1,8 @@
+Properties/
+.vs/
+bin/
+obj/
+packages/
+__pycache__/
+taskdb.bo
+WindowsF*
