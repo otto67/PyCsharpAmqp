@@ -6,3 +6,4 @@ packages/
 __pycache__/
 taskdb.bo
 WindowsF*
+app.py
