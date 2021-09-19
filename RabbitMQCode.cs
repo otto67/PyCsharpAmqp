@@ -39,8 +39,20 @@ namespace WindowsFormsApp1
             String idstring = TaskId.Text.ToString();
             int id = 0;
 
+            if (TaskOper.SelectedItem.ToString() == "List")
+            {                                
+                if (!(idstring.ToLower() == "all") && !(int.TryParse(idstring, out id)))
+                {
+                    MessageBox.Show("Invalid input: " + idstring);
+                    return;
+                }
 
-            if (!(int.TryParse(idstring, out id)))
+                ListTask(idstring);
+                return;
+            }
+
+
+                if (!(int.TryParse(idstring, out id)))
             {
                 MessageBox.Show("Invalid input: " + idstring);
                 return;
@@ -68,6 +80,8 @@ namespace WindowsFormsApp1
                 message += ";" + description;
             }
             QueueMsg(message);
+            System.Threading.Thread.Sleep(3000);
+            ListenForResponse();
         }
 
         private void Receive_Click(object sender, EventArgs e)
@@ -75,7 +89,6 @@ namespace WindowsFormsApp1
             // Add code to listen for message
             
             String idstring = TaskId.Text.ToString();
-
 
             int id = 0;
 
@@ -115,12 +128,12 @@ namespace WindowsFormsApp1
         private void ListTask(String id)
         {
             String msg = "List;" + id;
-            QueueMsg(msg);
+
             ServerResp.Text = "";
 
-            System.Threading.Thread myThread = new System.Threading.Thread(this.ListenForResponse);
-            myThread.Start();
-
+            QueueMsg(msg);
+            System.Threading.Thread.Sleep(3000);
+            ListenForResponse();
         }
 
 
@@ -193,6 +206,7 @@ namespace WindowsFormsApp1
                    
                     RabbitMQ.Client.IBasicProperties props = channel.CreateBasicProperties();
                     props.ContentType = "text/plain";
+                    props.Expiration = "5000"; // Message will be deleted from queue after 5 seconds
 
                     channel.BasicPublish(exchange: "task_exch",
                                      routingKey: routing_key,
@@ -204,7 +218,6 @@ namespace WindowsFormsApp1
             catch (Exception e)
             {
                 MessageBox.Show("Exception: " + e.Message + e.GetType());
-
             }
             finally
             {
@@ -240,7 +253,8 @@ namespace WindowsFormsApp1
                    exchange: queueName,
                    routingKey: queueName, null);
 
-                    channel.BasicConsume(queueName,true, "", false, false, null, consumer);
+                   channel.BasicConsume(queueName,true, "", false, false, null, consumer);
+                    
                 }
             }
             catch (Exception e) // RabbitMQ.Client.Exceptions. e)
@@ -252,8 +266,9 @@ namespace WindowsFormsApp1
                 // Should close channel and connection here, but they are out of scope
                 // channel.Close();
                 // connection.Close();
+                
             }
-        }
+         }
         private void processResponse(String msg)
         {
             var myList = msg.Split(':');
@@ -267,6 +282,11 @@ namespace WindowsFormsApp1
                 ServerResp.Text += "\t Task completed status: " + tmp[2] + "\r\n";
                 ServerResp.Text += "\r\n";
             }            
+        }
+
+        private void getButton_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Later we will get something from a python/node.js/other language server");
         }
     }
 }

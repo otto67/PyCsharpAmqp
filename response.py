@@ -1,6 +1,13 @@
 import os, pika
 
 def sendResponse(results, queue_name):
+    """ Sends result message to queue_name on a 
+    direct exchange with the same name as queue_name
+
+    Args:
+        results (string): Message to be sent
+        queue_name (string): queue
+    """    
     
     url = os.getenv('CLOUDAMQP_URL')
 
@@ -18,7 +25,7 @@ def sendResponse(results, queue_name):
         message = str(results)
 
         if not message:
-            message = "No results for id"
+            message = "No results available"
 
         message = message.encode()
 
@@ -29,7 +36,7 @@ def sendResponse(results, queue_name):
 
         binding_key = queue_name
 
-        channel.queue_bind(exchange=queue_name, queue=queue_name, routing_key=binding_key)
+#        channel.queue_bind(exchange=queue_name, queue=queue_name, routing_key=binding_key)
         
         channel.basic_publish(exchange=queue_name, 
         routing_key=routing_key, body=message, 

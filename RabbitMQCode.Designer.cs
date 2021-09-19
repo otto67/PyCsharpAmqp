@@ -30,6 +30,7 @@ namespace WindowsFormsApp1
         private void InitializeComponent()
         {
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.ModeSelector = new System.Windows.Forms.ToolStripComboBox();
             this.TaskOper = new System.Windows.Forms.ToolStripComboBox();
             this.TaskId = new System.Windows.Forms.ToolStripTextBox();
             this.ServerResp = new System.Windows.Forms.TextBox();
@@ -41,7 +42,6 @@ namespace WindowsFormsApp1
             this.blockingCheck = new System.Windows.Forms.CheckBox();
             this.Receipt = new System.Windows.Forms.CheckBox();
             this.getButton = new System.Windows.Forms.Button();
-            this.ModeSelector = new System.Windows.Forms.ToolStripComboBox();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -58,12 +58,23 @@ namespace WindowsFormsApp1
             this.menuStrip1.Text = "menuStrip1";
             this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
             // 
+            // ModeSelector
+            // 
+            this.ModeSelector.Items.AddRange(new object[] {
+            "Send",
+            "Listen"});
+            this.ModeSelector.Name = "ModeSelector";
+            this.ModeSelector.Size = new System.Drawing.Size(121, 23);
+            this.ModeSelector.Text = "Mode ";
+            this.ModeSelector.SelectedIndexChanged += new System.EventHandler(this.ModeSelector_SelectedIndexChanged);
+            // 
             // TaskOper
             // 
             this.TaskOper.Items.AddRange(new object[] {
             "Add",
             "Delete",
-            "Complete"});
+            "Complete",
+            "List"});
             this.TaskOper.Name = "TaskOper";
             this.TaskOper.Size = new System.Drawing.Size(121, 23);
             this.TaskOper.Tag = "";
@@ -160,18 +171,9 @@ namespace WindowsFormsApp1
             this.getButton.TabIndex = 11;
             this.getButton.Text = "Get messages";
             this.getButton.UseVisualStyleBackColor = true;
+            this.getButton.Click += new System.EventHandler(this.getButton_Click);
             // 
-            // ModeSelector
-            // 
-            this.ModeSelector.Items.AddRange(new object[] {
-            "Send",
-            "Listen"});
-            this.ModeSelector.Name = "ModeSelector";
-            this.ModeSelector.Size = new System.Drawing.Size(121, 23);
-            this.ModeSelector.Text = "Mode ";
-            this.ModeSelector.SelectedIndexChanged += new System.EventHandler(this.ModeSelector_SelectedIndexChanged);
-            // 
-            // Form1
+            // RabbitMQCode
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -187,7 +189,7 @@ namespace WindowsFormsApp1
             this.Controls.Add(this.ServerResp);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.Name = "Form1";
+            this.Name = "RabbitMQCode";
             this.Text = "RabbitMQ testing";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.menuStrip1.ResumeLayout(false);

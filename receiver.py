@@ -13,19 +13,38 @@ if not url:
     print("Environment variable CLOUDAMQP_URL not set")
     sys.exit(-1)
 
+
 def createThread(id, message):
+    """ Creating a separate thread for handling each message.
+    Just for testing, not really necessary for my simple messages 
+
+    Args:
+        id (integer): Thread id. Global parameter that is incremented for each 
+        thread
+        message (string): message to be processed
+    """    
     mythr = threading.Thread(target=runThread, args=(id,message))
     mythr.daemon = True
     mythr.start()
     
-
+    
 def queue_callback(ch, method, properties, body):
+    """ Callback for processing a RabbitMQ message
+
+    Args:
+        ch ([type]): [description]
+        method ([type]): [description]
+        properties ([type]): Content type, etc.
+        body ([type]): Actual message
+    """    
     global recv_count
     recv_count += 1
     message = body.decode()
     createThread(recv_count, message)
 
 def createTable():
+    """[Creates a task database]
+    """    
     conn = sqlite3.connect('taskdb.db')
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS tasks (
@@ -38,6 +57,17 @@ def createTable():
     conn.close()
 
 def addEntry(mylist):
+    """ Adding a task into the database
+
+    Args:
+        mylist (list): Values for the database columns
+
+    Returns:
+        [integer]: Zero if success, else a negative 
+        number
+        -2 no database found 
+        -1 - task id already exists
+    """    
     # Assume database file is in running directory 
     retval = 0
     if not os.path.isfile('taskdb.db'):
@@ -53,7 +83,9 @@ def addEntry(mylist):
         c.execute("INSERT INTO tasks VALUES (?, ?, ?)", (id, desc, 0))
         conn.commit()
         conn.close()
-        print("Added element with id " + id + " and description " + desc)
+        msg = "Added element with id " + id + " and description " + desc
+        print(msg)
+        sender.sendResponse(msg, "task_response")
                 
     except sqlite3.IntegrityError:
         print("Unsuccessful add. Id " + str(id) + " already exists")
@@ -65,8 +97,12 @@ def addEntry(mylist):
     
 
 
-def printAll(queue_name):
-    
+def listAll(queue_name):
+    """ Listing all tasks in database
+
+    Args:
+        queue_name (string): Name of the AMQP queue to post results
+    """    
     # Assume database file is in running directory
     if not os.path.isfile('taskdb.db'):
         return 
@@ -90,12 +126,18 @@ def printAll(queue_name):
 
     mystring = mystring[:-1]
 
-    print("Printall: " + mystring)
-
+    # Send response to client
     sender.sendResponse(mystring, queue_name)
     
 
 def findEntry(id, queue_name):
+    """ Find task with specified id
+
+    Args:
+        id (integer): task id
+        queue_name (string): Name of the AMQP queue to post results
+        
+    """    
     # Assume database file is in running directory
     if not os.path.isfile('taskdb.db'):
         return 
@@ -119,10 +161,14 @@ def findEntry(id, queue_name):
 
     mystring = mystring[:-1]
 
-    print("FindEntry: ", mystring)
     sender.sendResponse(mystring, queue_name)
 
 def removeEntry(id):
+    """ Remove task with specified id
+
+    Args:
+        id (integer): task id
+    """    
     # Assume database file is in running directory
     
     if not os.path.isfile('taskdb.db'):
@@ -138,7 +184,13 @@ def removeEntry(id):
         retval = c.rowcount
         conn.commit()
         conn.close()
-        print("Removed " + retval + " rows from table") 
+        
+        print(f"Removed {retval}rows from table") 
+        msg = f"Removed element with id {id} from database"
+        print(msg)
+        sender.sendResponse(msg, "task_response")
+                
+    
     except:
         conn.close()
         
@@ -146,6 +198,11 @@ def removeEntry(id):
         pass
 
 def completeEntry(id):
+    """ Mark a task as completed
+
+    Args:
+        id (integer): task id
+    """    
     # Assume database file is in running directory
     
     if not os.path.isfile('taskdb.db'):
@@ -160,11 +217,15 @@ def completeEntry(id):
     try:
         c.execute('UPDATE tasks SET completed=? WHERE id=?', (1, id))
 
-        print("After execute")
-
         retval = c.rowcount
+        # print(f"{retval} task were completed")
         conn.commit()
         
+        msg = "Completed element with id " + id
+        print(msg)
+        sender.sendResponse(msg, "task_response")
+                
+    
     except:
         e = sys.exc_info()[0]        
         print("Exception from completeEntry", e)
@@ -172,7 +233,16 @@ def completeEntry(id):
         conn.close() 
 
 def runThread(id, message):
+    """ Thread function called on thread start.
+    Acquires lock to avoid race conditions
 
+    Args:
+        id (integer): thread id
+        message (list): 
+        Element 0 - operation to be performed
+        Element 1 - task id or all
+
+    """
     retval = 0
  
  #    while not mutex.acquire(blocking=False):
@@ -191,9 +261,10 @@ def runThread(id, message):
     else: # List request
         queue_name = 'task_response'
         if mylist[1].lower() == 'all':
-            printAll(queue_name)
+            listAll(queue_name)
         else:
             findEntry(mylist[1], queue_name)
+
     mutex.release()
     
 
